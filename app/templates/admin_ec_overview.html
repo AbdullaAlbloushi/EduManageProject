@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}EC & Deadline Management{% endblock %}
+
+{% block content %}
+<style>
+    .ec-header {
+        margin-bottom: 30px;
+    }
+
+    .ec-stats {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .stat-card {
+        flex: 1;
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #86868b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-pending .stat-number { color: #fa8c16; }
+    .stat-approved .stat-number { color: #52c41a; }
+    .stat-rejected .stat-number { color: #f5222d; }
+
+    .ec-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #f5f5f7;
+    }
+
+    th {
+        padding: 15px 20px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #86868b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f5f5f7;
+        font-size: 14px;
+    }
+
+    tr:hover {
+        background: #fafafa;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fff7e6;
+        color: #fa8c16;
+    }
+
+    .status-approved {
+        background: #f6ffed;
+        color: #52c41a;
+    }
+
+    .status-rejected {
+        background: #fff1f0;
+        color: #f5222d;
+    }
+
+    .remind-btn, .edit-btn {
+        background: var(--apple-blue);
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .remind-btn:hover, .edit-btn:hover {
+        background: #0077ed;
+        transform: translateY(-1px);
+    }
+
+    .ext-badge {
+        background: #f0f5ff;
+        color: #0071e3;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #86868b;
+    }
+
+    /* Modal styling */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 500px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .modal-subtitle {
+        font-size: 14px;
+        color: #6e6e73;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e5e5e7;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--apple-blue);
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .btn-primary, .btn-secondary {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--apple-blue);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #0077ed;
+    }
+
+    .btn-secondary {
+        background: #e5e5e7;
+        color: #1d1d1f;
+    }
+
+    .btn-secondary:hover {
+        background: #d1d1d6;
+    }
+</style>
+
+<div class="ec-header">
+    <h1 style="font-size: 32px; font-weight: 600; margin-bottom: 5px;">
+        📋 EC & Deadline Management
+    </h1>
+    <p style="color: #6e6e73; font-size: 14px;">
+        View EC applications, manage extension days, and remind Wellbeing if requests are still pending.
+    </p>
+
+    <div class="ec-stats">
+        {% set pending_count = ecs | selectattr('status', 'equalto', 'pending') | list | length %}
+        {% set approved_count = ecs | selectattr('status', 'equalto', 'approved') | list | length %}
+        {% set rejected_count = ecs | selectattr('status', 'equalto', 'rejected') | list | length %}
+
+        <div class="stat-card stat-pending">
+            <div class="stat-number">{{ pending_count }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card stat-approved">
+            <div class="stat-number">{{ approved_count }}</div>
+            <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat-card stat-rejected">
+            <div class="stat-number">{{ rejected_count }}</div>
+            <div class="stat-label">Rejected</div>
+        </div>
+    </div>
+</div>
+
+{% if ecs %}
+<div class="ec-table">
+    <table>
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Task</th>
+                <th>Deadline</th>
+                <th>Extension</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ec in ecs %}
+            <tr>
+                <td style="font-weight: 500;">{{ ec.student.name }}</td>
+                <td>{{ ec.task.title }}</td>
+                <td style="color: #1d1d1f; font-size: 13px;">
+                    <div>{{ ec.task.deadline.strftime('%Y-%m-%d %H:%M') }}</div>
+                </td>
+                <td>
+                    {% if ec.extension_days > 0 %}
+                    <span class="ext-badge">+{{ ec.extension_days }} day(s)</span>
+                    {% else %}
+                    <span style="color: #d2d2d7;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-badge status-{{ ec.status }}">
+                        {% if ec.status == 'pending' %}
+                            Pending
+                        {% elif ec.status == 'approved' %}
+                            Approved
+                        {% else %}
+                            Rejected
+                        {% endif %}
+                    </span>
+                </td>
+                <td style="color: #86868b; font-size: 13px;">
+                    {{ ec.created_at.strftime('%m-%d %H:%M') }}
+                </td>
+                <td>
+                    <button onclick="editExtensionDays({{ ec.id }}, '{{ ec.student.name }}', '{{ ec.task.title }}', {{ ec.extension_days }}, '{{ ec.status }}')"
+                            class="edit-btn">
+                        ✏️ Edit Extension
+                    </button>
+                    {% if ec.status == 'pending' %}
+                    <a href="{{ url_for('send_reminder', target_role='wellbeing', related_id=ec.id, context='ec_approval') }}"
+                       class="remind-btn">
+                        ⏰ Remind
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No EC Applications</h3>
+    <p>EC applications will appear here.</p>
+</div>
+{% endif %}
+
+<!-- Edit Extension Days Modal -->
+<div id="extensionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">📅 Edit Extension Days</div>
+            <div class="modal-subtitle" id="ecInfo"></div>
+        </div>
+        <form id="extensionForm">
+            <input type="hidden" id="ecIdInput" name="ec_id">
+            <div class="form-group">
+                <label class="form-label">Extension Days <span style="color: #ff3b30;">*</span></label>
+                <input type="number" name="extension_days" id="extensionDaysInput" class="form-input"
+                       min="0" max="365" required placeholder="Enter 0-365 days">
+                <p style="font-size: 12px; color: #86868b; margin-top: 6px;">
+                    Enter 0 for no extension. The maximum allowed value is 365 days.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeExtensionModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div style="margin-top: 30px; padding: 20px; background: #f5f5f7; border-radius: 10px;">
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">
+        💡 Tips
+    </h3>
+    <ul style="margin: 0; padding-left: 20px; color: #6e6e73; font-size: 14px; line-height: 1.8;">
+        <li>Admin can <strong>view</strong> all EC applications and <strong>edit extension days</strong>.</li>
+        <li>Approving or rejecting EC requests is the responsibility of the <strong>Wellbeing department</strong>.</li>
+        <li>Click <strong>Edit Extension</strong> to modify the student's approved EC extension days.</li>
+        <li>If an EC application is still pending, the system will ask for confirmation before editing extension days.</li>
+        <li>If pending applications are not processed, click <strong>Remind</strong> to notify Wellbeing.</li>
+        <li>To modify global task deadlines, go to the <a href="{{ url_for('admin_tasks') }}" style="color: #0071e3;">Manage Deadlines</a> page.</li>
+    </ul>
+</div>
+
+<script>
+let currentEcId = null;
+
+function editExtensionDays(ecId, studentName, taskTitle, currentDays, ecStatus) {
+    // Check EC status before allowing extension edits
+    if (ecStatus === 'pending') {
+        if (confirm('This EC application is still pending.\nWellbeing has not reviewed it yet.\n\nDo you still want to edit extension days?')) {
+            showExtensionModal(ecId, studentName, taskTitle, currentDays);
+        }
+    } else {
+        showExtensionModal(ecId, studentName, taskTitle, currentDays);
+    }
+}
+
+function showExtensionModal(ecId, studentName, taskTitle, currentDays) {
+    currentEcId = ecId;
+    document.getElementById('ecIdInput').value = ecId;
+    document.getElementById('ecInfo').textContent = `Student: ${studentName} | Task: ${taskTitle}`;
+    document.getElementById('extensionDaysInput').value = currentDays;
+    document.getElementById('extensionModal').style.display = 'block';
+}
+
+function closeExtensionModal() {
+    document.getElementById('extensionModal').style.display = 'none';
+    currentEcId = null;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('extensionModal');
+    if (event.target == modal) {
+        closeExtensionModal();
+    }
+};
+
+// Submit form using AJAX
+document.getElementById('extensionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const extensionDays = document.getElementById('extensionDaysInput').value;
+    if (extensionDays === '' || extensionDays < 0 || extensionDays > 365) {
+        alert('Please enter a number between 0 and 365.');
+        return;
+    }
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
+    fetch('/admin/ec/edit_extension/' + currentEcId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'extension_days=' + encodeURIComponent(extensionDays)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+            closeExtensionModal();
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Network error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+});
+</script>
+
+{% endblock %}

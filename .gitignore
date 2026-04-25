@@ -1,0 +1,29 @@
+# Database
+app.db
+app.db-journal
+*.sqlite
+*.sqlite3
+
+# Python background/cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# User uploads
+uploads/
+
+# PyCharm settings
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables / secrets
+.env

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<style>
+    .notifications-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .notif-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        transition: all 0.2s;
+        border-left: 4px solid transparent;
+    }
+
+    .notif-card.unread {
+        border-left-color: var(--apple-blue);
+        background: #f0f5ff;
+    }
+
+    .notif-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .notif-type {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .type-reminder_ec,
+    .type-reminder_general {
+        background: #fff4cc;
+        color: #996500;
+    }
+
+    .type-ec_approved {
+        background: #d1f4e0;
+        color: #0d7e3a;
+    }
+
+    .type-ec_rejected {
+        background: #ffe5e5;
+        color: #d32f2f;
+    }
+
+    .type-deadline_changed {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .type-ec_updated {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    .type-ec_extension_set {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .type-ec_submitted {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    .type-additional_info_required {
+        background: #fff4cc;
+        color: #996500;
+    }
+
+    .type-additional_info_submitted {
+        background: #e0f2f1;
+        color: #00695c;
+    }
+
+    .type-ec_approved_need_admin_action {
+        background: #fff9c4;
+        color: #f57f17;
+    }
+
+    .type-feedback_given {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .notif-time {
+        font-size: 12px;
+        color: #86868b;
+    }
+
+    .notif-message {
+        color: #1d1d1f;
+        line-height: 1.6;
+        font-size: 14px;
+        margin-bottom: 10px;
+        white-space: pre-line;
+    }
+
+    .notif-sender {
+        font-size: 12px;
+        color: #6e6e73;
+        font-style: italic;
+    }
+
+    .notif-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 12px;
+    }
+
+    .mark-read-btn {
+        background: none;
+        border: none;
+        color: var(--apple-blue);
+        font-size: 13px;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+    }
+
+    .mark-read-btn:hover {
+        color: #0077ed;
+    }
+
+    .mark-all-btn {
+        background: var(--apple-blue);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .mark-all-btn:hover {
+        background: #0077ed;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #86868b;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="notifications-header">
+    <div>
+        <h1 style="font-size: 32px; font-weight: 600; margin-bottom: 5px;">
+            🔔 Notifications
+        </h1>
+        <p style="color: #6e6e73; font-size: 14px;">
+            {% if unread_notification_count > 0 %}
+                You have {{ unread_notification_count }} unread notification(s).
+            {% else %}
+                All notifications are read.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if unread_notification_count > 0 %}
+    <a href="{{ url_for('mark_all_notifications_read_universal') }}" class="mark-all-btn">
+        Mark All as Read
+    </a>
+    {% endif %}
+</div>
+
+{% if notifications %}
+    {% for notif in notifications %}
+    <div class="notif-card {% if not notif.is_read %}unread{% endif %}">
+        <div class="notif-header">
+            <span class="notif-type type-{{ notif.type }}">
+                {{ notif.type.replace('_', ' ') }}
+            </span>
+            <span class="notif-time">
+                {{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </span>
+        </div>
+
+        <div class="notif-message">
+            {{ notif.message }}
+        </div>
+
+        {% if notif.sender %}
+        <div class="notif-sender">
+            From: {{ notif.sender.username }} ({{ notif.sender.role }})
+        </div>
+        {% endif %}
+
+        <div class="notif-actions">
+            {% if not notif.is_read %}
+            <a href="{{ url_for('mark_notification_read_universal', notif_id=notif.id) }}"
+               class="mark-read-btn">
+                Mark as Read
+            </a>
+            {% endif %}
+
+            {% if notif.ec and notif.ec_id %}
+                {% if current_user.role == 'wellbeing' %}
+                <a href="{{ url_for('wellbeing_manage') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View EC Application →
+                </a>
+                {% elif current_user.role == 'admin' %}
+                <a href="{{ url_for('admin_ec_overview') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View EC Overview →
+                </a>
+                {% elif current_user.role == 'student' %}
+                <a href="{{ url_for('my_tasks') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View My EC Status →
+                </a>
+                {% endif %}
+            {% endif %}
+
+            {% if notif.task and notif.task_id %}
+                {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('admin_tasks') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View Task →
+                </a>
+                {% elif current_user.role == 'teacher' %}
+                <a href="{{ url_for('teacher_task_overview') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View Task →
+                </a>
+                {% elif current_user.role == 'student' %}
+                <a href="{{ url_for('my_tasks') }}"
+                   style="color: var(--apple-blue); font-size: 13px; text-decoration: none;">
+                    View My Schedule →
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3 style="color: #1d1d1f; margin-bottom: 10px;">No notifications</h3>
+        <p>Notifications will appear here when you receive them.</p>
+    </div>
+{% endif %}
+{% endblock %}

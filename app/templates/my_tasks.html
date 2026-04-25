@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}My Academic Schedule{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 style="font-weight: 600;">My Academic Schedule</h1>
+        <p style="color: #86868b;">View your assignment deadlines and apply for EC extension if needed.</p>
+    </div>
+    <a href="{{ url_for('reminder_settings') }}" class="btn-apple" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+        ⚙️ Reminder Settings
+    </a>
+</header>
+
+<section style="margin-bottom: 50px;">
+    <h3 style="margin-bottom: 20px;">
+        Upcoming Tasks
+        <span style="font-size: 14px; color: #86868b; font-weight: 400;">
+            (Current reminder setting: {{ reminder_days }} day(s) before deadline)
+        </span>
+    </h3>
+
+    <div style="display: grid; gap: 15px;">
+        {% for item in tasks %}
+        <div style="background: {% if item.should_remind %}#fff3cd{% else %}#f5f5f7{% endif %}; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; {% if item.should_remind %}border: 2px solid #ffc107;{% endif %}">
+            <div style="flex: 1;">
+                <div style="font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 10px;">
+                    {% if item.should_remind %}
+                    <span style="font-size: 18px;">⚠️</span>
+                    {% endif %}
+                    {{ item.task.title }}
+                </div>
+
+                <div style="color: #86868b; font-size: 13px; margin-top: 5px;">
+                    Deadline: {{ item.task.deadline.strftime('%Y-%m-%d %H:%M') }}
+                </div>
+
+                {% if item.should_remind %}
+                <div style="color: #ff9500; font-size: 13px; font-weight: 600; margin-top: 5px;">
+                    🔔 Reminder: {{ item.days_left }} day(s) left!
+                </div>
+                {% elif item.days_left >= 0 %}
+                <div style="color: #86868b; font-size: 13px; margin-top: 5px;">
+                    Time left: {{ item.days_left }} day(s)
+                </div>
+                {% else %}
+                <div style="color: #ff3b30; font-size: 13px; font-weight: 600; margin-top: 5px;">
+                    ❌ Overdue
+                </div>
+                {% endif %}
+            </div>
+
+            <span style="font-size: 12px; background: white; padding: 5px 12px; border-radius: 10px; border: 1px solid #d2d2d7;">
+                Assignment
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section style="background: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #f0f0f2;">
+    <h3 style="margin-bottom: 20px;">Apply for Extenuating Circumstances (EC)</h3>
+
+    <form action="" method="post" enctype="multipart/form-data" style="display: grid; gap: 15px;">
+        {{ form.hidden_tag() }}
+
+        <div>
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#86868b;">
+                Select Task
+            </label>
+            {{ form.task_id(class="apple-input", style="width:100%;") }}
+        </div>
+
+        <div>
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#86868b;">
+                Reason for Extension
+            </label>
+            {{ form.reason(class="apple-input", style="width:100%;", placeholder="Please explain your reason for requesting an extension...") }}
+        </div>
+
+        <div>
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#86868b;">
+                Upload Evidence File
+                <span style="font-weight: 400; color: #b0b0b5;">(JPG, PNG, PDF, optional)</span>
+            </label>
+            {{ form.evidence_file(class="apple-input", style="width:100%; padding: 8px 15px;") }}
+
+            {% if form.evidence_file.errors %}
+                {% for e in form.evidence_file.errors %}
+                <p style="color: #ff3b30; font-size: 12px; margin-top: 4px;">{{ e }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div>
+            <label style="display:block; margin-bottom:5px; font-size:13px; color:#86868b;">
+                Evidence Link
+                <span style="font-weight: 400; color: #b0b0b5;">(OneDrive / Dropbox, optional)</span>
+            </label>
+            {{ form.evidence_link(class="apple-input", style="width:100%;", placeholder="https://...") }}
+        </div>
+
+        <div style="margin-top: 10px;">
+            {{ form.submit(class="btn-apple") }}
+        </div>
+    </form>
+</section>
+
+<section style="margin-top: 50px;">
+    <h3 style="margin-bottom: 20px;">My EC Status</h3>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr style="text-align: left; color: #86868b; font-size: 13px; border-bottom: 1px solid #eee;">
+            <th style="padding: 10px;">Task</th>
+            <th style="padding: 10px;">Status</th>
+            <th style="padding: 10px;">Evidence</th>
+            <th style="padding: 10px;">Result</th>
+            <th style="padding: 10px;">Actions</th>
+        </tr>
+
+        {% for ec in my_ecs %}
+        <tr style="border-bottom: 1px solid #fafafa; {% if ec.additional_info_required and not ec.additional_info_submitted_at %}background: #fff7e6;{% endif %}">
+            <td style="padding: 10px;">
+                {{ ec.task.title }}
+                {% if ec.additional_info_required and not ec.additional_info_submitted_at %}
+                <div style="margin-top: 5px;">
+                    <span style="background: #fa8c16; color: white; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">
+                        ⚠️ Additional Info Required
+                    </span>
+                </div>
+                {% endif %}
+            </td>
+
+            <td style="padding: 10px;">
+                <span style="color: {% if ec.status == 'pending' %}#ff9500{% elif 'approved' in ec.status %}#34c759{% else %}#ff3b30{% endif %}; font-weight: 600;">
+                    {{ ec.status }}
+                </span>
+            </td>
+
+            <td style="padding: 10px; font-size: 13px;">
+                {% if ec.evidence_filename %}
+                <a href="{{ url_for('view_evidence', ec_id=ec.id) }}" target="_blank"
+                   style="color: #0071e3; text-decoration: none;">
+                    📎 View Uploaded File
+                </a>
+                {% elif ec.evidence_link %}
+                <a href="{{ ec.evidence_link }}" target="_blank"
+                   style="color: #0071e3; text-decoration: none;">
+                    🔗 View Link
+                </a>
+                {% else %}
+                <span style="color: #d2d2d7;">—</span>
+                {% endif %}
+            </td>
+
+            <td style="padding: 10px;">
+                {% if ec.status == 'approved' %}
+                    {{ ec.extension_days }} day(s) approved
+                {% else %}
+                    <span style="color: #d2d2d7;">—</span>
+                {% endif %}
+            </td>
+
+            <td style="padding: 10px;">
+                {% if ec.additional_info_required and not ec.additional_info_submitted_at %}
+                    <!-- Wellbeing requested additional information and the student has not submitted it yet -->
+                    <button onclick="openSupplementModal({{ ec.id }}, '{{ ec.task.title }}', '{{ ec.wellbeing_message|replace('\n', '\\n')|replace('\'', '\\\'') }}')"
+                            style="background: #fa8c16; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s;">
+                        📎 Submit Additional Info
+                    </button>
+
+                {% elif ec.additional_info_required and ec.additional_info_submitted_at %}
+                    <!-- Additional information has already been submitted -->
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="color: #34c759; font-size: 13px; font-weight: 600;">
+                            ✅ Additional info submitted
+                        </span>
+                        <span style="font-size: 11px; color: #86868b;">
+                            {{ ec.additional_info_submitted_at.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                    </div>
+
+                {% elif ec.status == 'pending' %}
+                    <!-- Pending status but no additional information is required -->
+                    <span style="color: #86868b; font-size: 13px; background: #f5f5f7; padding: 6px 10px; border-radius: 6px; display: inline-block;">
+                        ⏳ Waiting for Wellbeing review<br>
+                        <span style="font-size: 11px;">No additional information required yet</span>
+                    </span>
+
+                {% elif ec.status == 'approved' %}
+                    <span style="color: #34c759; font-size: 13px; font-weight: 600;">
+                        ✅ Approved
+                    </span>
+
+                {% elif ec.status == 'rejected' %}
+                    <span style="color: #ff3b30; font-size: 13px; font-weight: 600;">
+                        ❌ Rejected
+                    </span>
+
+                {% else %}
+                    <span style="color: #d2d2d7;">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</section>
+
+<!-- Submit Additional Information Modal -->
+<div id="supplementModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div style="background: white; margin: 5% auto; padding: 30px; border-radius: 12px; max-width: 700px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideIn 0.3s ease;">
+        <div style="margin-bottom: 20px;">
+            <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">📎 Submit Additional Information</h2>
+            <p style="color: #6e6e73; font-size: 14px;" id="supplementTaskTitle"></p>
+        </div>
+
+        <div style="background: #fff7e6; border-left: 4px solid #fa8c16; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-weight: 600; color: #fa8c16; margin-bottom: 8px;">💬 Wellbeing Message:</div>
+            <div style="color: #1d1d1f; font-size: 14px; white-space: pre-wrap;" id="wellbeingMessage"></div>
+        </div>
+
+        <form id="supplementForm" enctype="multipart/form-data">
+            <input type="hidden" id="supplementEcId" name="ec_id">
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                    Upload Additional File
+                    <span style="font-weight: 400; color: #b0b0b5;">(JPG, PNG, PDF)</span>
+                </label>
+                <input type="file" name="additional_file" id="additionalFileInput" accept=".jpg,.jpeg,.png,.pdf"
+                       style="width: 100%; padding: 12px; border: 2px solid #e5e5e7; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                    Or Provide a Link
+                    <span style="font-weight: 400; color: #b0b0b5;">(OneDrive, Dropbox, etc.)</span>
+                </label>
+                <input type="url" name="additional_link" id="additionalLinkInput"
+                       placeholder="https://..."
+                       style="width: 100%; padding: 12px; border: 2px solid #e5e5e7; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button type="button" onclick="closeSupplementModal()"
+                        style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: #e5e5e7; color: #1d1d1f;">
+                    Cancel
+                </button>
+                <button type="submit"
+                        style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: #fa8c16; color: white;">
+                    Submit
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+input:focus {
+    outline: none;
+    border-color: #fa8c16 !important;
+}
+
+button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+</style>
+
+<script>
+let currentSupplementEcId = null;
+
+function openSupplementModal(ecId, taskTitle, wellbeingMessage) {
+    currentSupplementEcId = ecId;
+    document.getElementById('supplementEcId').value = ecId;
+    document.getElementById('supplementTaskTitle').textContent = 'Task: ' + taskTitle;
+    document.getElementById('wellbeingMessage').textContent = wellbeingMessage;
+    document.getElementById('additionalFileInput').value = '';
+    document.getElementById('additionalLinkInput').value = '';
+    document.getElementById('supplementModal').style.display = 'block';
+}
+
+function closeSupplementModal() {
+    document.getElementById('supplementModal').style.display = 'none';
+    currentSupplementEcId = null;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('supplementModal');
+    if (event.target == modal) {
+        closeSupplementModal();
+    }
+};
+
+// Submit form
+document.getElementById('supplementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const ecId = document.getElementById('supplementEcId').value;
+    const fileInput = document.getElementById('additionalFileInput');
+    const linkInput = document.getElementById('additionalLinkInput');
+
+    // Validate that at least one type of evidence is provided
+    if (!fileInput.files.length && !linkInput.value.trim()) {
+        alert('Please upload a file or provide a link.');
+        return;
+    }
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    const formData = new FormData();
+
+    if (fileInput.files.length) {
+        formData.append('additional_file', fileInput.files[0]);
+    }
+
+    if (linkInput.value.trim()) {
+        formData.append('additional_link', linkInput.value.trim());
+    }
+
+    fetch('/student/submit_additional_info/' + ecId, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+            closeSupplementModal();
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Network error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+});
+</script>
+{% endblock %}

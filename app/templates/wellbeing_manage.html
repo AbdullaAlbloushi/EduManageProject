@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}EC Approval Center{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 40px;">
+    <h1 style="font-weight: 600;">EC Approval Center</h1>
+    <p style="color: #86868b;">Review student extension requests and supporting evidence.</p>
+</header>
+
+<div style="background: #ffffff; border-radius: 20px; border: 1px solid #f0f0f2; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="background: #f5f5f7; color: #86868b; font-size: 12px; border-bottom: 1px solid #eee;">
+                <th style="padding: 15px 20px;">Student</th>
+                <th style="padding: 15px 20px;">Task</th>
+                <th style="padding: 15px 20px;">Reason</th>
+                <th style="padding: 15px 20px;">Evidence</th>
+                <th style="padding: 15px 20px;">Additional Info</th>
+                <th style="padding: 15px 20px;">Extension Days</th>
+                <th style="padding: 15px 20px;">Status</th>
+                <th style="padding: 15px 20px;">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for ec in ecs %}
+            <tr style="border-bottom: 1px solid #f5f5f7;">
+                <td style="padding: 15px 20px; font-weight: 500;">{{ ec.student.name }}</td>
+                <td style="padding: 15px 20px;">{{ ec.task.title }}</td>
+                <td style="padding: 15px 20px; font-size: 13px; color: #424245;">{{ ec.reason }}</td>
+
+                <!-- Evidence column -->
+                <td style="padding: 15px 20px; font-size: 13px;">
+                    {% if ec.evidence_filename %}
+                        <a href="{{ url_for('view_evidence', ec_id=ec.id) }}" target="_blank"
+                           style="color: #0071e3; text-decoration: none; display: block; margin-bottom: 2px;">
+                            📎 View File
+                        </a>
+                        <a href="{{ url_for('download_evidence', ec_id=ec.id) }}"
+                           style="color: #86868b; text-decoration: none; font-size: 11px;">
+                            ⬇ Download
+                        </a>
+                    {% elif ec.evidence_link %}
+                        <a href="{{ ec.evidence_link }}" target="_blank"
+                           style="color: #0071e3; text-decoration: none;">
+                            🔗 External Link
+                        </a>
+                    {% else %}
+                        <span style="color: #d2d2d7;">—</span>
+                    {% endif %}
+                </td>
+
+                <!-- Additional information column -->
+                <td style="padding: 15px 20px; font-size: 13px;">
+                    {% if ec.additional_info_required %}
+                        {% if ec.additional_info_submitted_at %}
+                            <span style="background: #f6ffed; color: #52c41a; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; margin-bottom: 6px;">
+                                ✅ Submitted
+                            </span>
+
+                            {% if ec.additional_evidence_filename %}
+                                <a href="{{ url_for('view_evidence', ec_id=ec.id) }}?type=additional" target="_blank"
+                                   style="color: #0071e3; text-decoration: none; display: block; margin-bottom: 3px;">
+                                    📎 View File
+                                </a>
+                                <a href="{{ url_for('download_evidence', ec_id=ec.id) }}?type=additional"
+                                   style="color: #86868b; text-decoration: none; font-size: 11px; display: block; margin-bottom: 3px;">
+                                    ⬇ Download
+                                </a>
+                            {% endif %}
+
+                            {% if ec.additional_evidence_link %}
+                                <a href="{{ ec.additional_evidence_link }}" target="_blank"
+                                   style="color: #0071e3; text-decoration: none; display: block; margin-bottom: 3px;">
+                                    🔗 Link
+                                </a>
+                            {% endif %}
+
+                            <div style="font-size: 10px; color: #86868b; margin-top: 4px;">
+                                {{ ec.additional_info_submitted_at.strftime('%m-%d %H:%M') }}
+                            </div>
+                        {% else %}
+                            <span style="background: #fff7e6; color: #fa8c16; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block;">
+                                ⏳ Waiting for student
+                            </span>
+                            <div style="color: #86868b; font-size: 11px; margin-top: 6px;">
+                                💬 {{ ec.wellbeing_message[:30] }}{% if ec.wellbeing_message|length > 30 %}...{% endif %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: #d2d2d7;">—</span>
+                    {% endif %}
+                </td>
+
+                <td style="padding: 15px 20px; text-align: center;">
+                    {% if ec.extension_days > 0 %}
+                    <span style="padding: 4px 8px; border-radius: 6px; font-size: 12px;
+                                 background: #f0f5ff; color: #0071e3;">
+                        +{{ ec.extension_days }} day(s)
+                    </span>
+                    {% else %}
+                    <span style="color: #d2d2d7; font-size: 13px;">—</span>
+                    {% endif %}
+                </td>
+
+                <td style="padding: 15px 20px;">
+                    <span style="padding: 4px 8px; border-radius: 6px; font-size: 12px;
+                        {% if ec.status == 'pending' %} background: #fff7e6; color: #fa8c16;
+                        {% elif ec.status == 'approved' %} background: #f6ffed; color: #52c41a;
+                        {% else %} background: #fff1f0; color: #f5222d; {% endif %}">
+                        {{ ec.status.upper() }}
+                    </span>
+                </td>
+
+                <td style="padding: 15px 20px;">
+                    {% if ec.status == 'pending' %}
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <a href="{{ url_for('approve_ec', ec_id=ec.id, action='approve') }}"
+                               style="color: #0071e3; text-decoration: none; margin-right: 10px; font-size: 14px;">
+                                ✅ Approve
+                            </a>
+                            <a href="{{ url_for('approve_ec', ec_id=ec.id, action='reject') }}"
+                               style="color: #ff3b30; text-decoration: none; font-size: 14px;">
+                                ❌ Reject
+                            </a>
+                        </div>
+
+                        <div>
+                            <button onclick="openAdditionalInfoModal({{ ec.id }}, '{{ ec.student.name|replace('\'', '\\\'') }}', '{{ ec.task.title|replace('\'', '\\\'') }}')"
+                                    style="background: #fa8c16; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                📎 Request More Info
+                            </button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <span style="color: #d2d2d7; font-size: 14px;">Processed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not ecs %}
+    <div style="padding: 40px; text-align: center; color: #86868b; font-size: 14px;">
+        No EC applications found.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Request Additional Information Modal -->
+<div id="additionalInfoModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div style="background: white; margin: 5% auto; padding: 30px; border-radius: 12px; max-width: 600px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideIn 0.3s ease;">
+        <div style="margin-bottom: 20px;">
+            <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">📎 Request Additional Information</h2>
+            <p style="color: #6e6e73; font-size: 14px;" id="modalSubtitle"></p>
+        </div>
+
+        <form id="additionalInfoForm">
+            <input type="hidden" id="ecIdInput" name="ec_id">
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+                    Message to Student <span style="color: #ff3b30;">*</span>
+                </label>
+                <textarea name="message" id="messageInput"
+                          style="width: 100%; min-height: 120px; padding: 12px; border: 2px solid #e5e5e7; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; box-sizing: border-box; resize: vertical;"
+                          placeholder="Please specify what additional materials or information are needed..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button type="button" onclick="closeAdditionalInfoModal()"
+                        style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: #e5e5e7; color: #1d1d1f;">
+                    Cancel
+                </button>
+                <button type="submit"
+                        style="flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: #fa8c16; color: white;">
+                    Send Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #fa8c16;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+</style>
+
+<script>
+let currentEcId = null;
+
+function openAdditionalInfoModal(ecId, studentName, taskTitle) {
+    currentEcId = ecId;
+    document.getElementById('ecIdInput').value = ecId;
+    document.getElementById('modalSubtitle').textContent = `Student: ${studentName} | Task: ${taskTitle}`;
+    document.getElementById('messageInput').value = '';
+    document.getElementById('additionalInfoModal').style.display = 'block';
+}
+
+function closeAdditionalInfoModal() {
+    document.getElementById('additionalInfoModal').style.display = 'none';
+    currentEcId = null;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('additionalInfoModal');
+    if (event.target == modal) {
+        closeAdditionalInfoModal();
+    }
+};
+
+// Submit form using AJAX
+document.getElementById('additionalInfoForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const ecId = document.getElementById('ecIdInput').value;
+    const message = document.getElementById('messageInput').value;
+
+    if (!message.trim()) {
+        alert('Please enter a message.');
+        return;
+    }
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    fetch('/wellbeing/request_additional_info/' + ecId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'message=' + encodeURIComponent(message)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Success: ' + data.message);
+            closeAdditionalInfoModal();
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Network error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+});
+</script>
+
+{% endblock %}

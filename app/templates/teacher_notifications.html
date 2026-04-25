@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Notifications{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between;">
+    <div>
+        <h1 style="font-weight: 600; margin-bottom: 6px;">🔔 Teacher Notifications</h1>
+        <p style="color: #86868b; margin: 0;">Task updates and EC approval notices will appear here.</p>
+    </div>
+
+    {% if notifications %}
+    <a href="{{ url_for('mark_all_notifications_read') }}"
+       style="font-size: 13px; color: #0071e3; text-decoration: none; white-space: nowrap;">
+        ✓ Mark All as Read
+    </a>
+    {% endif %}
+</header>
+
+{% if not notifications %}
+<div style="text-align: center; padding: 60px 0; color: #86868b;">
+    <div style="font-size: 40px; margin-bottom: 15px;">📭</div>
+    <p>No notifications yet.</p>
+</div>
+{% else %}
+<div style="display: grid; gap: 12px;">
+    {% for notif in notifications %}
+    <div style="
+        background: {% if notif.is_read %}#fafafa{% else %}#ffffff{% endif %};
+        border: 1px solid {% if notif.is_read %}#f0f0f2{% else %}#d0e8ff{% endif %};
+        border-left: 4px solid {% if notif.is_read %}#d2d2d7{% else %}#0071e3{% endif %};
+        border-radius: 14px;
+        padding: 18px 22px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+    ">
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <span style="font-size: 18px;">
+                    {% if notif.type == 'deadline_changed' %}⏱
+                    {% elif notif.type == 'ec_approved' %}✅
+                    {% elif notif.type == 'ec_rejected' %}❌
+                    {% elif notif.type == 'ec_extension_set' %}📅
+                    {% elif notif.type == 'ec_updated' %}✏️
+                    {% else %}📝
+                    {% endif %}
+                </span>
+
+                <span style="font-size: 13px; font-weight: 600; color: #1d1d1f;">
+                    {% if notif.type == 'deadline_changed' %}
+                        Deadline Changed
+                    {% elif notif.type == 'ec_approved' %}
+                        EC Approved
+                    {% elif notif.type == 'ec_rejected' %}
+                        EC Rejected
+                    {% elif notif.type == 'ec_extension_set' %}
+                        Extension Updated
+                    {% elif notif.type == 'ec_updated' %}
+                        EC Application Updated
+                    {% else %}
+                        Notification
+                    {% endif %}
+                </span>
+
+                {% if not notif.is_read %}
+                <span style="background: #0071e3; color: white; font-size: 10px;
+                             padding: 2px 7px; border-radius: 5px; font-weight: 600;">
+                    NEW
+                </span>
+                {% endif %}
+            </div>
+
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #1d1d1f; line-height: 1.5; white-space: pre-line;">
+                {{ notif.message }}
+            </p>
+
+            <p style="margin: 0; font-size: 12px; color: #86868b;">
+                {{ notif.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </p>
+        </div>
+
+        {% if not notif.is_read %}
+        <a href="{{ url_for('mark_notification_read', notif_id=notif.id) }}"
+           style="font-size: 12px; color: #86868b; text-decoration: none;
+                  white-space: nowrap; padding-top: 2px; flex-shrink: 0;">
+            Mark as Read
+        </a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
