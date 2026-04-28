@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Give Feedback{% endblock %}
+
+{% block content %}
+<style>
+    .feedback-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 30px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        animation: fadeInUp 0.5s ease;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f5f5f7;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #6e6e73;
+        font-size: 14px;
+    }
+
+    .info-value {
+        color: #1d1d1f;
+        font-size: 14px;
+    }
+
+    .extension-badge {
+        background: #fff4cc;
+        color: #996500;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    .feedback-form {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #1d1d1f;
+        font-size: 15px;
+    }
+
+    .feedback-textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 15px;
+        border: 2px solid #e5e5e7;
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        resize: vertical;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+    }
+
+    .feedback-textarea:focus {
+        outline: none;
+        border-color: var(--apple-blue);
+    }
+
+    .feedback-textarea:disabled {
+        background: #f5f5f7;
+        color: #6e6e73;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .submit-btn {
+        flex: 1;
+        background: var(--apple-blue);
+        color: white;
+        border: none;
+        padding: 14px 0;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .submit-btn:hover {
+        background: #0077ed;
+        transform: translateY(-1px);
+    }
+
+    .cancel-btn {
+        flex: 1;
+        background: #e5e5e7;
+        color: #1d1d1f;
+        border: none;
+        padding: 14px 0;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .cancel-btn:hover {
+        background: #d1d1d6;
+    }
+
+    .feedback-given-note {
+        background: #d1f4e0;
+        color: #0d7e3a;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+</style>
+
+<div class="feedback-container">
+    <h1 style="font-size: 32px; font-weight: 600; margin-bottom: 10px;">
+        ✍️ Give Feedback
+    </h1>
+    <p style="color: #6e6e73; margin-bottom: 30px;">
+        Provide detailed feedback for the student's work.
+    </p>
+
+    <div class="info-card">
+        <div class="info-row">
+            <span class="info-label">Task</span>
+            <span class="info-value">{{ submission.task.title }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Student</span>
+            <span class="info-value">{{ submission.student.name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Student ID</span>
+            <span class="info-value">{{ submission.student.studentnumber }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Submission Deadline</span>
+            <span class="info-value">
+                {{ submission.individual_deadline.strftime('%Y-%m-%d %H:%M') }}
+                {% if submission.extension_days > 0 %}
+                    <span class="extension-badge">Extended {{ submission.extension_days }} day(s)</span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Feedback Deadline</span>
+            <span class="info-value">
+                {{ submission.individual_feedback_deadline.strftime('%Y-%m-%d %H:%M') }}
+                {% if submission.extension_days > 0 %}
+                    <span class="extension-badge">Automatically extended {{ submission.extension_days }} day(s)</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="feedback-form">
+        {% if submission.feedback_given %}
+            <div class="feedback-given-note">
+                You submitted feedback on {{ submission.feedback_time.strftime('%Y-%m-%d %H:%M') }}.
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            <label class="form-label">
+                Feedback Content
+            </label>
+            <textarea
+                name="feedback_content"
+                class="feedback-textarea"
+                placeholder="Please enter detailed feedback..."
+                {% if submission.feedback_given %}disabled{% endif %}
+                required
+            >{% if submission.feedback_content %}{{ submission.feedback_content }}{% endif %}</textarea>
+
+            <div class="btn-group">
+                <a href="{{ url_for('teacher_task_overview') }}" class="cancel-btn">
+                    Back
+                </a>
+                {% if not submission.feedback_given %}
+                <button type="submit" class="submit-btn">
+                    Submit Feedback
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

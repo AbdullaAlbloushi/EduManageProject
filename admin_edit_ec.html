@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Edit EC Application — {{ ec.student.name }}{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 40px;">
+    <a href="{{ url_for('admin_ec_overview') }}"
+       style="font-size: 13px; color: #0071e3; text-decoration: none;">
+        ← Back to EC overview
+    </a>
+    <h1 style="font-weight: 600; margin-top: 10px;">✏️ Edit EC Application</h1>
+    <p style="color: #86868b;">
+        Student: <strong>{{ ec.student.name }}</strong> &nbsp;|&nbsp;
+        Task: <strong>{{ ec.task.title }}</strong>
+    </p>
+</header>
+
+<div style="background: #ffffff; border-radius: 20px; border: 1px solid #f0f0f2;
+            padding: 35px; max-width: 500px;">
+
+    <div style="background: #f5f5f7; border-radius: 12px; padding: 15px 20px;
+                margin-bottom: 25px; font-size: 13px; color: #424245;">
+        <strong>Reason:</strong> {{ ec.reason }}
+
+        {% if ec.evidence_link %}
+        <br>
+        <strong>Evidence:</strong>
+        <a href="{{ ec.evidence_link }}" target="_blank" style="color: #0071e3;">
+            View Link
+        </a>
+        {% endif %}
+    </div>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 13px; font-weight: 500;
+                          color: #86868b; margin-bottom: 8px;">
+                Current Status
+            </label>
+            <input type="text"
+                   value="{{ ec.status }}"
+                   class="apple-input"
+                   style="width: 100%; box-sizing: border-box; background: #f5f5f7; color: #666;"
+                   readonly>
+            <p style="font-size: 12px; color: #86868b; margin-top: 6px;">
+                Admin cannot modify the EC approval status. Approval and rejection are handled by Wellbeing.
+            </p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-size: 13px; font-weight: 500;
+                          color: #86868b; margin-bottom: 8px;">
+                {{ form.extension_days.label.text }}
+            </label>
+
+            {% if ec.status == 'rejected' %}
+                {{ form.extension_days(class="apple-input", style="width: 100%; box-sizing: border-box; background: #f5f5f7; color: #666;", disabled=True) }}
+                <p style="font-size: 12px; color: #ff3b30; margin-top: 6px;">
+                    This EC application has been rejected by Wellbeing. Admin cannot modify extension days.
+                </p>
+            {% else %}
+                {{ form.extension_days(class="apple-input", style="width: 100%; box-sizing: border-box;") }}
+                <p style="font-size: 12px; color: #86868b; margin-top: 6px;">
+                    Enter 0 for no extension. The maximum allowed value is 365 days.
+                </p>
+            {% endif %}
+
+            {% if form.extension_days.errors %}
+                {% for e in form.extension_days.errors %}
+                <p style="color: #ff3b30; font-size: 12px; margin-top: 5px;">{{ e }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            {% if ec.status == 'rejected' %}
+                <button type="submit" class="btn-apple" disabled
+                        style="opacity: 0.5; cursor: not-allowed;">
+                    Cannot Edit
+                </button>
+            {% else %}
+                {{ form.submit(class="btn-apple") }}
+            {% endif %}
+
+            <a href="{{ url_for('admin_ec_overview') }}"
+               class="btn-apple"
+               style="text-decoration: none; background: #86868b;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
