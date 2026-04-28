@@ -1,7 +1,7 @@
-# EduManage: Student EC & Deadline Management System
+# ECManage: Student EC & Deadline Management System
 
 ## Project Overview
-EduManage is a role-based web application built to streamline the Extenuating Circumstances (EC) application process within a university setting. It bridges the communication gap between Students, Teachers, the Wellbeing Department, and System Administrators by providing a centralized platform for managing assignment deadlines, extension requests, and evidence submissions.
+ECManage is a role-based web application built to streamline the Extenuating Circumstances (EC) application process within a university setting. It bridges the communication gap between Students, Teachers, the Wellbeing Department, and System Administrators by providing a centralized platform for managing assignment deadlines, extension requests, and evidence submissions.
 
 ## Key Features
 
