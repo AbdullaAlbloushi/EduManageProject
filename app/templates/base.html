@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}EduManage System{% endblock %}</title>
+    <title>{% block title %}ECManage System{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -174,7 +174,7 @@
 <body>
 
 <nav class="nav-header">
-    <a href="{{ url_for('index') }}" class="nav-logo">EduManage</a>
+    <a href="{{ url_for('index') }}" class="nav-logo">ECManage</a>
     <div style="display: flex; align-items: center; gap: 20px;">
         {% if current_user.is_authenticated %}
             <span style="font-size: 13px; color: #86868b;">Hi, {{ current_user.username }}</span>
@@ -257,7 +257,7 @@
         {% block content %}{% endblock %}
 
         <footer class="apple-footer">
-            <p>© 2026 EduManage Inc. All rights reserved.</p>
+            <p>© 2026 ECManage Inc. All rights reserved.</p>
             <p style="margin-top: 5px;">Privacy Policy | Wellbeing Support | System Status</p>
         </footer>
     </div>
